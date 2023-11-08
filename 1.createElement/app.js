@@ -20,35 +20,26 @@ function createTextElement(text) {
   };
 }
 
-function createDom(fiber) {
+function render(element, container) {
+  console.log(element);
   const dom =
     element.type === "TEXT_ELEMENT"
       ? document.createTextNode("")
-      : document.createElement(fiber.type);
+      : document.createElement(element.type);
 
   const isProperty = (key) => key !== "children";
 
-  Object.keys(fiber.props)
+  Object.keys(element.props)
     .filter(isProperty)
     .forEach((name) => {
-      dom[name] = fiber.props[name];
+      dom[name] = element.props[name];
     });
   // recursive
-  fiber.props.children.forEach((ele) => {
+  element.props.children.forEach((ele) => {
     render(ele, dom);
   });
 
-  return dom;
-}
-
-function render(element, container) {
-  // TODO set next unit of work
-  nextUnitOfWork = {
-    dom: container,
-    props: {
-      children: [element],
-    },
-  };
+  container.appendChild(dom);
 }
 
 let nextUnitOfWork = null;
@@ -64,53 +55,8 @@ function workLoop(deadline) {
 
 requestIdleCallback(workLoop);
 
-function performUnitOfWork(fiber) {
-  // add dom node
-  if (!fiber.dom) {
-    fiber.dom = createDom(fiber);
-  }
-
-  if (fiber.parent) {
-    fiber.parent.dom.appendChild(fiber.dom);
-  }
-
-  // create new fibers
-  const elements = fiber.props.children;
-  let index = 0;
-  let prevSibling = null;
-
-  while (index < elements.length) {
-    const element = elements[index];
-    const newFiber = {
-      type: element.type,
-      props: element.props,
-      parent: fiber,
-      dom: null,
-    };
-
-    if (index === 0) {
-      fiber.child = newFiber;
-    } else {
-      prevSibling.sibling = newFiber;
-    }
-
-    prevSibling = newFiber; // ?
-    console.log(prevSibling);
-
-    index++;
-  }
-  // TODO return next unit of work
-  if (fiber.child) {
-    return fiber.child;
-  }
-
-  let nextFiber = fiber;
-  while (nextFiber) {
-    if (nextFiber.sibling) {
-      return nextFiber.sibling;
-    }
-    nextFiber = nextFiber.parent;
-  }
+function performUnitOfWork(nextUnitOfWork) {
+  // TODO
 }
 
 const Didact = {
